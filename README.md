@@ -1,36 +1,37 @@
-# Amazon Spam Sentry – ML‑Powered Spam Detection
+# Amazon Review Spam Detection
 
-## Overview
-This repository contains a machine learning pipeline for detecting spam in Amazon reviews. It leverages natural language processing techniques and classical classifiers (logistic regression, random forest, support vector machine) to identify spammy or fraudulent product reviews.
+Binary classifier that flags spam reviews in Amazon's Clothing, Shoes & Jewelry category, using engineered text-quality and sentiment features alongside TF-IDF.
+
+**Stack:** Python, scikit-learn, NLTK, VADER, textstat, mlxtend  
+**Context:** Team project, BU Questrom.
+
+## Problem
+Fake and low-quality reviews erode customer trust and distort product rankings. The goal is a model that can screen reviews at scale before they influence buyers.
 
 ## Data
-The dataset consists of Amazon product reviews labelled as “spam” or “non‑spam.” Each record includes review text, star rating and other metadata. (Due to licensing constraints, the full dataset is not included; you can substitute your own labelled review data.)
+Amazon Clothing, Shoes & Jewelry reviews with a spam / not-spam label. Narrowed to the 5,000 most-reviewed products, then downsampled the majority class to balance spam and non-spam. The raw JSON file is not included in this repo.
 
-## Pipeline
-1. **Preprocessing:** Clean the text (lowercasing, punctuation removal, stopword filtering) and convert to tokens.
-2. **Feature engineering:** Transform tokens into numerical features using TF–IDF.
-3. **Model training:** Train logistic regression, random forest and SVM models with scikit‑learn; evaluate with cross‑validation.
-4. **Evaluation:** Compute accuracy, precision, recall and F1 scores; plot confusion matrices to compare models.
+## Approach
+- **Custom sklearn transformers** for text cleanup (lemmatisation, stopwords), VADER sentiment, Flesch readability, review length, unique-word count and review-to-product similarity
+- `ColumnTransformer` pipeline combining TF-IDF text features with scaled numeric and one-hot categorical features
+- 70/30 train-test split; tuned SGD, Random Forest and SVM with RandomizedSearchCV and HalvingGridSearchCV (batched to fit memory)
+- Combined the tuned models in a hard-voting ensemble
 
-## Results
-The logistic regression model achieved an F1 score of 0.93 on the validation set, with high precision and recall. Random forest and SVM models performed comparably but with slightly lower precision on rare classes.
+## Results (test set, about 135K reviews)
+| Model | Accuracy | Macro F1 |
+|---|---|---|
+| SGD classifier | 0.84 | 0.84 |
+| Random Forest | 0.82 | 0.82 |
+| SVM | 0.82 | 0.82 |
+| Voting ensemble | 0.84 | 0.84 |
 
-## Usage
-1. Install dependencies:
+Sentiment, product similarity and words such as "return", "love" and helpful-vote signals ranked as the strongest predictors.
 
-   ```bash
-   pip install -r requirements.txt
-   ```
+## Next steps
+- Try transformer embeddings for richer text signal
+- Do error analysis on false positives, which carry the highest business cost
+- Serve the model behind a simple API for batch scoring
 
-2. Open the notebook:
-
-   ```bash
-   jupyter notebook amazon_spam_detection.ipynb
-   ```
-
-3. Replace the placeholder dataset loading cell with your own labelled review data, then run through the pipeline to train and evaluate models.
-
-## Next Steps
-- Incorporate transformer‑based text embeddings (e.g., BERT) to capture contextual information.
-- Deploy a live prediction API or Streamlit app for interactive spam detection.
-- Perform error analysis to understand misclassified examples and refine preprocessing.
+## Repo contents
+- `Amazon_Spam_Detection.ipynb`
+- `requirements.txt`
